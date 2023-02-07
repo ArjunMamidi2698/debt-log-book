@@ -11,7 +11,7 @@ import {
 } from "@mui/material";
 import DateFnsUtils from "@date-io/date-fns";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Record, TermUnit, useRecordData } from "../../store/records-context";
 import { RecordFormInputLabel } from "../common/form/RecordFormInputLabel";
 import { Spacer } from "../common/ui/Spacer";
@@ -29,7 +29,7 @@ type ControlledInputProps<T> = {
 	rule?: boolean;
 	errorMessage?: string;
 	placeholder?: string;
-	type?: BaseTextFieldProps['type']
+	type?: BaseTextFieldProps["type"];
 };
 const ControlledInput = ({
 	value,
@@ -38,20 +38,20 @@ const ControlledInput = ({
 	rule = false,
 	errorMessage,
 	placeholder,
-	type
+	type,
 }: ControlledInputProps<any>) => {
 	const handleChange = (newVal: string) => {
 		let res: string | number = newVal;
-		if( typeof value == 'number' ) {
+		if (typeof value == "number") {
 			res = parseInt(newVal) || 0;
 		}
 		setValue(res);
-	}
+	};
 	return (
 		<TextField
 			placeholder={placeholder}
 			error={!rule}
-			helperText={!rule ? (errorMessage ?? "error") : " "}
+			helperText={!rule ? errorMessage ?? "error" : " "}
 			required={required}
 			size="small"
 			margin="dense"
@@ -66,25 +66,11 @@ export const AddRecord = () => {
 	// Dialog Actions
 	const [open, setOpen] = useState(false);
 	const openDialog = () => setOpen(true);
-	const handleClose = () => setOpen(false);
-	const {records, addRecord} = useRecordData();
-	const handleSubmit = () => {
-		addRecord({
-			id: records.length + 1,
-			debtor,
-			principalAmount,
-			startDate: startValue,
-			endDate: endValue,
-			interestRate: {
-				rate,
-				amount,
-				term,
-				termUnit: "Month" as TermUnit,
-			},
-		});
-		handleClose();
-	}
-	
+	const handleClose = () => {
+		resetRecordForm();
+		setOpen(false)
+	};
+
 	// Form inputs
 	const [debtor, setDebtor] = useState<Record["debtor"]>("");
 	const [principalAmount, setPrincipalAmount] =
@@ -103,16 +89,47 @@ export const AddRecord = () => {
 	const validationRules = useMemo(() => {
 		return {
 			debtor: !!debtor,
-			principalAmount: principalAmount >= 0,
-			rate: rate >= 0,
-			amount: amount >= 0,
-			term: term >= 0,
+			principalAmount: principalAmount > 0,
+			rate: rate > 0,
+			amount: amount > 0,
+			term: term > 0,
 			startDate: !!startValue,
-		}
+		};
 	}, [debtor, principalAmount, rate, amount, term, startValue]);
 	const isValid = useMemo(() => {
-		return Object.values(validationRules).filter( v => !v ).length == 0;
+		return Object.values(validationRules).filter((v) => !v).length == 0;
 	}, [validationRules]);
+
+	// Form Actions
+	const { records, addRecord } = useRecordData();
+	const handleSubmit = () => {
+		addRecord({
+			id: records.length + 1,
+			debtor,
+			principalAmount,
+			startDate: startValue,
+			endDate: endValue,
+			interestRate: {
+				rate,
+				amount,
+				term,
+				termUnit: "Month" as TermUnit,
+			},
+		});
+		handleClose();
+	};
+	const resetRecordForm = () => {
+		setDebtor("");
+		setPrincipalAmount(1);
+		setRate(1);
+		setAmount(100);
+		setTerm(1);
+		setStartValue(new Date().getTime());
+		setEndValue(new Date().getTime());
+	};
+	useEffect(() => {
+		resetRecordForm();
+	}, []);
 
 	return (
 		<>
@@ -134,7 +151,7 @@ export const AddRecord = () => {
 							info="Who is responsible to pay the debt"
 							isRequired
 						/>
-						<ControlledInput 
+						<ControlledInput
 							placeholder="Debtor..."
 							value={debtor}
 							setValue={setDebtor}
@@ -147,7 +164,7 @@ export const AddRecord = () => {
 							info="Amount Taken as debt"
 							isRequired
 						/>
-						<ControlledInput 
+						<ControlledInput
 							value={principalAmount}
 							setValue={setPrincipalAmount}
 							required
@@ -160,7 +177,7 @@ export const AddRecord = () => {
 							isRequired
 						/>
 						<Box display={"flex"}>
-							<ControlledInput 
+							<ControlledInput
 								value={rate}
 								setValue={setRate}
 								required
@@ -264,7 +281,9 @@ export const AddRecord = () => {
 					</Box>
 				</DialogContent>
 				<DialogActions>
-					<Button onClick={handleSubmit} disabled={!isValid}>Submit</Button>
+					<Button onClick={handleSubmit} disabled={!isValid}>
+						Submit
+					</Button>
 					<Button onClick={handleClose}>Close</Button>
 				</DialogActions>
 			</Dialog>
