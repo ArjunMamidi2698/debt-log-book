@@ -1,0 +1,7 @@
+.dlbHeader {
+	display: flex;
+	align-items: center;
+}
+.dlbHeaderActions > * {
+	margin-left: .5rem;
+}
